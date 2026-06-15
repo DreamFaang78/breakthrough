@@ -125,6 +125,41 @@ export type AdminDoctorRow = {
   departments: { name: string } | null;
 };
 
+export type AdminStaffRow = {
+  id: string;
+  full_name: string;
+  email: string | null;
+  role: string;
+  doctor_id: string | null;
+  is_active: boolean;
+  doctors: { name: string } | null;
+};
+
+export type AdminHospitalRow = {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  address: string | null;
+  city: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  emergency_phone: string | null;
+  google_maps_url: string | null;
+  about: string | null;
+  default_language: string;
+  notification_email: string | null;
+};
+
+export type AdminDoctorTimingsRow = {
+  id: string;
+  name: string;
+  qualification: string | null;
+  opd_days: string[];
+  opd_timings: Record<string, { start: string; end: string }>;
+  departments: { name: string } | null;
+};
+
 export type AdminServiceRow = {
   id: string;
   name: string;

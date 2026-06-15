@@ -14,7 +14,6 @@ const NAV_LINKS = [
   { href: "/admin/timings", label: "Timings" },
   { href: "/admin/staff", label: "Staff" },
   { href: "/admin/content", label: "Content" },
-  { href: "/admin/settings", label: "Settings" },
   { href: "/admin/profile", label: "Profile" },
 ];
 

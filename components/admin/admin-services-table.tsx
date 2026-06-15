@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Plus, Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { AdminServiceRow, DepartmentOption } from "@/lib/types";
@@ -151,7 +152,13 @@ export function AdminServicesTable({ services, departments, hospitalId }: Props)
 
   async function addService(data: FormState) {
     setSaving(true);
-    await supabase.from("services").insert({ hospital_id: hospitalId, ...toPayload(data) });
+    const { error } = await supabase.from("services").insert({ hospital_id: hospitalId, ...toPayload(data) });
+    if (error) {
+      toast.error(error.message);
+      setSaving(false);
+      return;
+    }
+    toast.success("Service added.");
     router.refresh();
     setSaving(false);
     setAddOpen(false);
@@ -159,7 +166,13 @@ export function AdminServicesTable({ services, departments, hospitalId }: Props)
 
   async function updateService(id: string, data: FormState) {
     setSaving(true);
-    await supabase.from("services").update(toPayload(data)).eq("id", id);
+    const { error } = await supabase.from("services").update(toPayload(data)).eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      setSaving(false);
+      return;
+    }
+    toast.success("Service updated.");
     router.refresh();
     setSaving(false);
     setEditing(null);
@@ -167,7 +180,10 @@ export function AdminServicesTable({ services, departments, hospitalId }: Props)
 
   async function toggleActive(svc: AdminServiceRow) {
     setTogglingId(svc.id);
-    await supabase.from("services").update({ is_active: !svc.is_active }).eq("id", svc.id);
+    const { error } = await supabase.from("services").update({ is_active: !svc.is_active }).eq("id", svc.id);
+    if (error) {
+      toast.error(error.message);
+    }
     router.refresh();
     setTogglingId(null);
   }

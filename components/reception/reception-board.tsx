@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Loader2, Phone, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { AppointmentStatus, ReceptionAppointment } from "@/lib/types";
@@ -447,15 +448,21 @@ export function ReceptionBoard({ appointments, doctors, today }: Props) {
     return list;
   }, [appointments, tab, search, today]);
 
-  async function runAction(id: string, fn: () => PromiseLike<{ error: { message: string } | null }>) {
+  async function runAction(
+    id: string,
+    fn: () => PromiseLike<{ error: { message: string } | null }>,
+    successMessage = "Updated successfully."
+  ) {
     setLoadingId(id);
     setError(null);
     const { error } = await fn();
     if (error) {
       setError(error.message);
+      toast.error(error.message);
       setLoadingId(null);
       return;
     }
+    toast.success(successMessage);
     setModal(null);
     router.refresh();
     setLoadingId(null);
@@ -474,18 +481,22 @@ export function ReceptionBoard({ appointments, doctors, today }: Props) {
       });
       if (error) {
         setError(error.message);
+        toast.error(error.message);
         setLoadingId(null);
         return;
       }
       if (!appt.token_number) {
         await supabase.rpc("issue_token", { p_appointment_id: appt.id });
       }
+      toast.success("Patient marked as arrived.");
       router.refresh();
       setLoadingId(null);
       return;
     }
-    await runAction(appt.id, () =>
-      supabase.rpc("set_appointment_status", { p_appointment_id: appt.id, p_new_status: status })
+    await runAction(
+      appt.id,
+      () => supabase.rpc("set_appointment_status", { p_appointment_id: appt.id, p_new_status: status }),
+      `Marked as ${status.replace("_", " ")}.`
     );
   }
 
@@ -553,13 +564,16 @@ export function ReceptionBoard({ appointments, doctors, today }: Props) {
           onClose={() => setModal(null)}
           loading={loadingId === modal.appt.id}
           onSubmit={({ doctorId, date, time }) =>
-            runAction(modal.appt.id, () =>
-              supabase.rpc("assign_appointment", {
-                p_appointment_id: modal.appt.id,
-                p_doctor_id: doctorId || null,
-                p_confirmed_date: date,
-                p_confirmed_time: time,
-              })
+            runAction(
+              modal.appt.id,
+              () =>
+                supabase.rpc("assign_appointment", {
+                  p_appointment_id: modal.appt.id,
+                  p_doctor_id: doctorId || null,
+                  p_confirmed_date: date,
+                  p_confirmed_time: time,
+                }),
+              "Appointment assigned."
             )
           }
         />
@@ -570,12 +584,15 @@ export function ReceptionBoard({ appointments, doctors, today }: Props) {
           onClose={() => setModal(null)}
           loading={loadingId === modal.appt.id}
           onSubmit={(reason) =>
-            runAction(modal.appt.id, () =>
-              supabase.rpc("set_appointment_status", {
-                p_appointment_id: modal.appt.id,
-                p_new_status: "rejected",
-                p_meta: { reject_reason: reason },
-              })
+            runAction(
+              modal.appt.id,
+              () =>
+                supabase.rpc("set_appointment_status", {
+                  p_appointment_id: modal.appt.id,
+                  p_new_status: "rejected",
+                  p_meta: { reject_reason: reason },
+                }),
+              "Appointment rejected."
             )
           }
         />
@@ -587,12 +604,15 @@ export function ReceptionBoard({ appointments, doctors, today }: Props) {
           onClose={() => setModal(null)}
           loading={loadingId === modal.appt.id}
           onSubmit={({ date, time }) =>
-            runAction(modal.appt.id, () =>
-              supabase.rpc("set_appointment_status", {
-                p_appointment_id: modal.appt.id,
-                p_new_status: "rescheduled",
-                p_meta: { confirmed_date: date, confirmed_time: time },
-              })
+            runAction(
+              modal.appt.id,
+              () =>
+                supabase.rpc("set_appointment_status", {
+                  p_appointment_id: modal.appt.id,
+                  p_new_status: "rescheduled",
+                  p_meta: { confirmed_date: date, confirmed_time: time },
+                }),
+              "Appointment rescheduled."
             )
           }
         />
@@ -603,12 +623,15 @@ export function ReceptionBoard({ appointments, doctors, today }: Props) {
           onClose={() => setModal(null)}
           loading={loadingId === modal.appt.id}
           onSubmit={(date) =>
-            runAction(modal.appt.id, () =>
-              supabase.rpc("set_appointment_status", {
-                p_appointment_id: modal.appt.id,
-                p_new_status: "follow_up_required",
-                p_meta: { follow_up_date: date },
-              })
+            runAction(
+              modal.appt.id,
+              () =>
+                supabase.rpc("set_appointment_status", {
+                  p_appointment_id: modal.appt.id,
+                  p_new_status: "follow_up_required",
+                  p_meta: { follow_up_date: date },
+                }),
+              "Follow-up scheduled."
             )
           }
         />

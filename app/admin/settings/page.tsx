@@ -1,5 +1,5 @@
-import { ComingSoon } from "@/components/common/coming-soon";
+import { redirect } from "next/navigation";
 
 export default function AdminSettingsPage() {
-  return <ComingSoon title="Settings" />;
+  redirect("/admin/profile");
 }
