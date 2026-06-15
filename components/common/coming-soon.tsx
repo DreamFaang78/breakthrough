@@ -1,0 +1,8 @@
+export function ComingSoon({ title }: { title: string }) {
+  return (
+    <div>
+      <h1 className="text-2xl font-bold">{title}</h1>
+      <p className="mt-2 text-muted-foreground">This section is coming in a later phase.</p>
+    </div>
+  );
+}

@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hospital OS
 
-## Getting Started
+Multi-tenant hospital management platform (Next.js 15 + Supabase). See `PRD.md` for the full spec.
 
-First, run the development server:
+## Setup
+
+### 1. Create a Supabase project
+
+Create a project at [supabase.com](https://supabase.com), then copy `.env.local.example` to `.env.local` and fill in:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.local.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` — from Project Settings → API
+- `NEXT_PUBLIC_DEFAULT_HOSPITAL_SLUG` — leave as `sharma-hospital` to match the seed data
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Run database migrations + seed data
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+In the Supabase SQL Editor (or via `supabase db push` / `psql`), run in order:
 
-## Learn More
+1. `supabase/migrations/0001_init.sql` — enums, tables, RLS policies, helper functions
+2. `supabase/migrations/0002_rpcs.sql` — RPC functions (booking, status lookup, analytics, etc.)
+3. `supabase/seed.sql` — demo hospital "Sharma Multispeciality Hospital" with departments, doctors, services, testimonials
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Create staff login accounts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The seed data creates hospital/department/doctor rows but not auth users (Supabase Auth users must be created via the Auth UI/API). For each staff member you want to log in as:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. In Supabase Dashboard → Authentication → Users, create a user with email + password.
+2. Insert a matching row into `public.users` linking that auth user to the seeded hospital/role/doctor — see the commented example at the bottom of `supabase/seed.sql`.
 
-## Deploy on Vercel
+Suggested demo accounts: one `owner`, one `receptionist`, one `doctor` (linked to a seeded doctor row), and one `super_admin` (with `hospital_id = null`).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 4. Generate Supabase types (optional but recommended)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npx supabase gen types typescript --project-id <project-ref> --schema public > types/supabase.ts
+```
+
+This replaces the `any` placeholder in `types/supabase.ts` with real types.
+
+### 5. Run the app
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). The public site uses `NEXT_PUBLIC_DEFAULT_HOSPITAL_SLUG` on localhost; staff dashboards (`/admin`, `/reception`, `/doctor`, `/super`) require login at `/login` and route based on the logged-in user's role.
