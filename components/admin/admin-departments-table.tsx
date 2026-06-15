@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Plus, Pencil, Stethoscope, HeartPulse, Bone, Smile, Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { AdminDepartmentRow } from "@/lib/types";
@@ -157,7 +158,7 @@ export function AdminDepartmentsTable({ departments, hospitalId }: Props) {
 
   async function addDepartment(data: FormState) {
     setSaving(true);
-    await supabase.from("departments").insert({
+    const { error } = await supabase.from("departments").insert({
       hospital_id: hospitalId,
       name: data.name,
       slug: data.slug,
@@ -165,6 +166,12 @@ export function AdminDepartmentsTable({ departments, hospitalId }: Props) {
       description: data.description || null,
       is_active: data.is_active,
     });
+    if (error) {
+      toast.error(error.message);
+      setSaving(false);
+      return;
+    }
+    toast.success("Department added.");
     router.refresh();
     setSaving(false);
     setAddOpen(false);
@@ -172,7 +179,7 @@ export function AdminDepartmentsTable({ departments, hospitalId }: Props) {
 
   async function updateDepartment(id: string, data: FormState) {
     setSaving(true);
-    await supabase
+    const { error } = await supabase
       .from("departments")
       .update({
         name: data.name,
@@ -182,6 +189,12 @@ export function AdminDepartmentsTable({ departments, hospitalId }: Props) {
         is_active: data.is_active,
       })
       .eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      setSaving(false);
+      return;
+    }
+    toast.success("Department updated.");
     router.refresh();
     setSaving(false);
     setEditing(null);
@@ -189,7 +202,10 @@ export function AdminDepartmentsTable({ departments, hospitalId }: Props) {
 
   async function toggleActive(dept: AdminDepartmentRow) {
     setTogglingId(dept.id);
-    await supabase.from("departments").update({ is_active: !dept.is_active }).eq("id", dept.id);
+    const { error } = await supabase.from("departments").update({ is_active: !dept.is_active }).eq("id", dept.id);
+    if (error) {
+      toast.error(error.message);
+    }
     router.refresh();
     setTogglingId(null);
   }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Plus, Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { AdminDoctorRow, DepartmentOption } from "@/lib/types";
@@ -215,7 +216,13 @@ export function AdminDoctorsTable({ doctors, departments, hospitalId }: Props) {
 
   async function addDoctor(data: FormState) {
     setSaving(true);
-    await supabase.from("doctors").insert({ hospital_id: hospitalId, ...toPayload(data) });
+    const { error } = await supabase.from("doctors").insert({ hospital_id: hospitalId, ...toPayload(data) });
+    if (error) {
+      toast.error(error.message);
+      setSaving(false);
+      return;
+    }
+    toast.success("Doctor added.");
     router.refresh();
     setSaving(false);
     setAddOpen(false);
@@ -223,7 +230,13 @@ export function AdminDoctorsTable({ doctors, departments, hospitalId }: Props) {
 
   async function updateDoctor(id: string, data: FormState) {
     setSaving(true);
-    await supabase.from("doctors").update(toPayload(data)).eq("id", id);
+    const { error } = await supabase.from("doctors").update(toPayload(data)).eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      setSaving(false);
+      return;
+    }
+    toast.success("Doctor updated.");
     router.refresh();
     setSaving(false);
     setEditing(null);
@@ -231,7 +244,10 @@ export function AdminDoctorsTable({ doctors, departments, hospitalId }: Props) {
 
   async function toggleActive(doc: AdminDoctorRow) {
     setTogglingId(doc.id);
-    await supabase.from("doctors").update({ is_active: !doc.is_active }).eq("id", doc.id);
+    const { error } = await supabase.from("doctors").update({ is_active: !doc.is_active }).eq("id", doc.id);
+    if (error) {
+      toast.error(error.message);
+    }
     router.refresh();
     setTogglingId(null);
   }
