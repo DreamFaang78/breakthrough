@@ -11,7 +11,7 @@ export default async function ReceptionDashboardPage() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const [{ count: pending }, { count: todaysAppointments }, { count: newLeads }, { data: appointments }, { data: doctors }] =
+  const [{ count: pending }, { count: todaysAppointments }, { count: newLeads }, { data: rawAppointments }, { data: doctors }, { data: pendingNotifs }] =
     await Promise.all([
       supabase
         .from("appointments")
@@ -41,7 +41,20 @@ export default async function ReceptionDashboardPage() {
         .select("id, name, department_id")
         .eq("hospital_id", hospitalId)
         .eq("is_active", true),
+      supabase
+        .from("notifications")
+        .select("entity_id")
+        .eq("hospital_id", hospitalId)
+        .in("type", ["reschedule_request", "cancellation_request"])
+        .eq("is_read", false),
     ]);
+
+  const pendingRequestIds = new Set((pendingNotifs ?? []).map((n) => n.entity_id).filter(Boolean));
+
+  const appointments = (rawAppointments ?? []).map((a) => ({
+    ...a,
+    has_pending_request: pendingRequestIds.has(a.id),
+  }));
 
   const stats = [
     { label: "Pending Requests", value: pending ?? 0 },
@@ -58,7 +71,7 @@ export default async function ReceptionDashboardPage() {
         ))}
       </div>
       <ReceptionBoard
-        appointments={(appointments ?? []) as unknown as ReceptionAppointment[]}
+        appointments={appointments as unknown as ReceptionAppointment[]}
         doctors={doctors ?? []}
         today={today}
       />

@@ -223,6 +223,17 @@ export function AnalyticsDashboard({ hospitalId }: Props) {
             ))}
           </div>
 
+          {(overview?.lost_leads ?? 0) > 0 && (
+            <div className="rounded-xl border-2 border-orange-200 bg-orange-50 p-4 flex items-center gap-4">
+              <div className="shrink-0 size-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-lg">₹</div>
+              <div>
+                <p className="text-sm font-medium text-orange-800">Estimated Lost Revenue</p>
+                <p className="text-2xl font-bold text-orange-700">₹{((overview?.lost_leads ?? 0) * 400).toLocaleString("en-IN")}</p>
+                <p className="text-xs text-orange-600 mt-0.5">{overview?.lost_leads} lost leads × ₹400 avg ticket — reduce rejections to recover this</p>
+              </div>
+            </div>
+          )}
+
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
             <div className="rounded-xl border p-4">
               <p className="text-sm text-muted-foreground">Most Demanded Department</p>

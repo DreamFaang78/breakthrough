@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { href: "/reception", label: "Dashboard" },
   { href: "/reception/walk-in", label: "Walk-in" },
   { href: "/reception/leads", label: "Leads" },
+  { href: "/reception/follow-ups", label: "Follow-ups" },
 ];
 
 export default async function ReceptionLayout({ children }: { children: React.ReactNode }) {
