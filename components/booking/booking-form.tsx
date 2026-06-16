@@ -180,6 +180,12 @@ export function BookingForm({
   );
 
   // When department changes, clear doctor selection (skip on initial mount)
+  // Ensure hospital_id is set in RHF internal state (hidden inputs don't reliably
+  // inherit defaultValues in RHF's uncontrolled mode — the DOM starts as "" on mount).
+  useEffect(() => {
+    setValue("hospital_id", hospitalId);
+  }, [hospitalId, setValue]);
+
   const isFirstRender = useRef(true);
   useEffect(() => {
     if (isFirstRender.current) {
@@ -202,7 +208,7 @@ export function BookingForm({
       const res = await fetch("/api/booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, hospital_id: hospitalId }),
       });
       const json = await res.json();
 

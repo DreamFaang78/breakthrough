@@ -5,7 +5,7 @@ import { z } from "zod";
  * Reused on both client (RHF validation) and server (API route).
  */
 export const bookingSchema = z.object({
-  hospital_id: z.string().uuid(),
+  hospital_id: z.string().regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/),
   department_id: z.string().uuid({ message: "Please select a department" }),
   doctor_id: z.string().uuid().optional().or(z.literal("")),
   type: z.enum(["opd", "follow_up", "emergency"]).default("opd"),
