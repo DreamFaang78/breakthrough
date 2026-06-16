@@ -16,7 +16,7 @@ export const bookingSchema = z.object({
       message: "Date cannot be in the past",
     }),
   preferred_slot: z.string().min(1, "Please select a time slot"),
-  name: z.string().min(2, "Name must be at least 2 characters"),
+  name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name too long"),
   phone: z
     .string()
     .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number"),
@@ -28,8 +28,8 @@ export const bookingSchema = z.object({
   gender: z.enum(["Male", "Female", "Other"], {
     error: "Please select a gender",
   }),
-  city_area: z.string().optional(),
-  problem: z.string().optional(),
+  city_area: z.string().max(100, "Area too long").optional(),
+  problem: z.string().max(500, "Description too long (max 500 chars)").optional(),
   consent: z.literal(true, {
     error: "You must agree to be contacted",
   }),

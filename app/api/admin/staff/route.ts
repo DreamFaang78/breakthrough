@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
 
   const { email, password, full_name, role, doctor_id } = (body ?? {}) as Record<string, unknown>;
 
-  if (typeof email !== "string" || !email.trim() || typeof password !== "string" || password.length < 6) {
-    return NextResponse.json({ error: "Valid email and password (min 6 chars) are required." }, { status: 400 });
+  if (typeof email !== "string" || !email.trim() || typeof password !== "string" || password.length < 10) {
+    return NextResponse.json({ error: "Valid email and password (min 10 chars) are required." }, { status: 400 });
   }
   if (typeof full_name !== "string" || !full_name.trim()) {
     return NextResponse.json({ error: "Full name is required." }, { status: 400 });
@@ -45,7 +45,8 @@ export async function POST(request: NextRequest) {
   });
 
   if (authError || !created.user) {
-    return NextResponse.json({ error: authError?.message ?? "Failed to create account." }, { status: 400 });
+    console.error("[staff] Failed to create auth user:", authError?.message);
+    return NextResponse.json({ error: "Failed to create account." }, { status: 400 });
   }
 
   const { error: profileError } = await admin.from("users").insert({
@@ -59,7 +60,8 @@ export async function POST(request: NextRequest) {
 
   if (profileError) {
     await admin.auth.admin.deleteUser(created.user.id);
-    return NextResponse.json({ error: profileError.message }, { status: 400 });
+    console.error("[staff] Failed to create user profile:", profileError.message);
+    return NextResponse.json({ error: "Failed to create staff profile." }, { status: 400 });
   }
 
   return NextResponse.json({ id: created.user.id });

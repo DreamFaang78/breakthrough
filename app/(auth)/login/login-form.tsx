@@ -14,7 +14,7 @@ import { ROLE_HOME } from "@/lib/auth/roles";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(10, "Password must be at least 10 characters"),
 });
 
 export function LoginForm({ redirectTo }: { redirectTo?: string }) {
@@ -46,7 +46,8 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
       .eq("id", data.user.id)
       .single();
 
-    const destination = redirectTo || ROLE_HOME[profile?.role ?? ""] || "/";
+    const safeRedirect = redirectTo?.match(/^\/(?!\/)/) ? redirectTo : undefined;
+    const destination = safeRedirect || ROLE_HOME[profile?.role ?? ""] || "/";
     router.push(destination);
     router.refresh();
   }

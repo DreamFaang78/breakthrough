@@ -231,6 +231,21 @@ export function BookingForm({
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [result, setResult] = useState<BookingResult | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+  // Register global Turnstile callbacks (Turnstile calls these by name after render)
+  useEffect(() => {
+    if (!turnstileSiteKey) return;
+    (window as unknown as Record<string, unknown>).onTurnstileSuccess = (token: string) =>
+      setTurnstileToken(token);
+    (window as unknown as Record<string, unknown>).onTurnstileExpired = () =>
+      setTurnstileToken("");
+    return () => {
+      delete (window as unknown as Record<string, unknown>).onTurnstileSuccess;
+      delete (window as unknown as Record<string, unknown>).onTurnstileExpired;
+    };
+  }, [turnstileSiteKey]);
 
   const {
     register,
@@ -284,7 +299,11 @@ export function BookingForm({
       const res = await fetch("/api/booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, hospital_id: hospitalId }),
+        body: JSON.stringify({
+          ...data,
+          hospital_id: hospitalId,
+          cf_turnstile_response: turnstileToken || undefined,
+        }),
       });
       const json = await res.json();
 
@@ -526,6 +545,17 @@ export function BookingForm({
             </span>
           </label>
           <FieldError message={errors.consent?.message} />
+
+          {/* Cloudflare Turnstile — renders only when NEXT_PUBLIC_TURNSTILE_SITE_KEY is set */}
+          {turnstileSiteKey && (
+            <div
+              className="cf-turnstile"
+              data-sitekey={turnstileSiteKey}
+              data-callback="onTurnstileSuccess"
+              data-expired-callback="onTurnstileExpired"
+              data-theme="light"
+            />
+          )}
 
           {/* Server error */}
           {serverError && (

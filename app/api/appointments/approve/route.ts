@@ -41,7 +41,8 @@ export async function POST(request: NextRequest) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[approve] assign_appointment failed:", error.message);
+    return NextResponse.json({ error: "Failed to approve appointment" }, { status: 500 });
   }
 
   // Resolve doctor name if assigned
