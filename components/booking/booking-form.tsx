@@ -180,6 +180,12 @@ export function BookingForm({
   );
 
   // When department changes, clear doctor selection (skip on initial mount)
+  // Ensure hospital_id is set in RHF internal state (hidden inputs don't reliably
+  // inherit defaultValues in RHF's uncontrolled mode — the DOM starts as "" on mount).
+  useEffect(() => {
+    setValue("hospital_id", hospitalId);
+  }, [hospitalId, setValue]);
+
   const isFirstRender = useRef(true);
   useEffect(() => {
     if (isFirstRender.current) {
@@ -202,7 +208,7 @@ export function BookingForm({
       const res = await fetch("/api/booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, hospital_id: hospitalId }),
       });
       const json = await res.json();
 
@@ -242,8 +248,8 @@ export function BookingForm({
       </div>
 
       {/* ---- STEP 1: Appointment details ---- */}
-      {step === 1 && (
-        <div className="space-y-5 animate-fade-in">
+      {/* NOTE: hidden via CSS (not unmounted) so RHF retains field values when on step 2 */}
+      <div className={cn("space-y-5", step !== 1 && "hidden")}>
           {/* Department */}
           <div>
             <FieldLabel required>Department</FieldLabel>
@@ -347,12 +353,10 @@ export function BookingForm({
           >
             Continue →
           </button>
-        </div>
-      )}
+      </div>
 
       {/* ---- STEP 2: Patient details ---- */}
-      {step === 2 && (
-        <div className="space-y-5 animate-fade-in">
+      <div className={cn("space-y-5", step !== 2 && "hidden")}>
           <button
             type="button"
             onClick={() => setStep(1)}
@@ -450,7 +454,7 @@ export function BookingForm({
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={step !== 2 || submitting}
             className="w-full rounded-2xl bg-primary px-6 py-4 font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? (
@@ -466,8 +470,7 @@ export function BookingForm({
           <p className="text-center text-xs text-muted-foreground">
             Your request will be reviewed and confirmed by our receptionist.
           </p>
-        </div>
-      )}
+      </div>
     </form>
   );
 }

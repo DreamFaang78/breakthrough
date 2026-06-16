@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
@@ -13,6 +13,13 @@ type Doctor = { id: string; name: string; department_id: string | null };
 interface Props {
   departments: Department[];
   doctors: Doctor[];
+  hospitalId: string;
+}
+
+type ReturningPatient = { name: string; lastDate: string; doctorName?: string };
+
+function formatDate(d: string) {
+  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 }
 
 interface WalkInResult {
@@ -72,11 +79,12 @@ function SelectBase({ className, children, ...props }: React.SelectHTMLAttribute
   );
 }
 
-export function WalkInForm({ departments, doctors }: Props) {
+export function WalkInForm({ departments, doctors, hospitalId }: Props) {
   const supabase = createClient();
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [result, setResult] = useState<WalkInResult | null>(null);
+  const [returning, setReturning] = useState<ReturningPatient | null>(null);
 
   const {
     register,
@@ -90,6 +98,39 @@ export function WalkInForm({ departments, doctors }: Props) {
   });
 
   const selectedDeptId = watch("department_id");
+  const phone = watch("phone");
+
+  // Returning patient lookup — fires once phone is a valid 10-digit number
+  useEffect(() => {
+    if (!/^[6-9]\d{9}$/.test(phone ?? "")) {
+      setReturning(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.rpc("get_patient_status", {
+        p_phone: phone,
+        p_hospital_id: hospitalId,
+      });
+      if (cancelled || !data) { setReturning(null); return; }
+      type StatusResult = {
+        patient?: { name?: string };
+        appointments?: Array<{ confirmed_date?: string | null; preferred_date?: string; status: string; doctors?: { name: string } | null }>;
+      };
+      const result = data as StatusResult;
+      const name = result.patient?.name;
+      if (!name) { setReturning(null); return; }
+      const last = result.appointments?.find((a) =>
+        ["completed", "approved", "arrived", "in_consultation"].includes(a.status)
+      );
+      setReturning({
+        name,
+        lastDate: last?.confirmed_date ?? last?.preferred_date ?? "",
+        doctorName: last?.doctors?.name,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [phone, hospitalId, supabase]);
   const filteredDoctors = doctors.filter((d) => !selectedDeptId || d.department_id === selectedDeptId);
 
   const onSubmit = async (data: WalkInFormValues) => {
@@ -184,6 +225,20 @@ export function WalkInForm({ departments, doctors }: Props) {
           className="mt-1.5"
         />
         <FieldError message={errors.phone?.message} />
+        {returning && (
+          <div className="mt-2 flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm text-blue-800">
+            <span className="shrink-0 mt-0.5">⚡</span>
+            <div>
+              <span className="font-semibold">Returning patient — {returning.name}</span>
+              {(returning.lastDate || returning.doctorName) && (
+                <span className="text-blue-600">
+                  {returning.lastDate ? ` · Last: ${formatDate(returning.lastDate)}` : ""}
+                  {returning.doctorName ? ` · ${returning.doctorName}` : ""}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">

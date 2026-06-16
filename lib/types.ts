@@ -66,6 +66,7 @@ export type ReceptionAppointment = {
   patients: { name: string; phone: string; age: number | null; gender: string | null } | null;
   doctors: { id: string; name: string } | null;
   departments: { id: string; name: string } | null;
+  has_pending_request?: boolean;
 };
 
 export type DoctorAppointment = {

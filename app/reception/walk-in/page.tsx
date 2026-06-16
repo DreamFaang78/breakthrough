@@ -22,7 +22,11 @@ export default async function ReceptionWalkInPage() {
   return (
     <div className="max-w-lg space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Add Walk-in Patient</h1>
-      <WalkInForm departments={departments ?? []} doctors={doctors ?? []} />
+      <WalkInForm
+        departments={departments ?? []}
+        doctors={doctors ?? []}
+        hospitalId={profile?.hospital_id ?? ""}
+      />
     </div>
   );
 }

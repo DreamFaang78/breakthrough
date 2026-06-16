@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Phone, MessageCircle, Navigation, Calendar, Clock, AlertCircle, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { Phone, MessageCircle, Navigation, Calendar, Clock, AlertCircle, CheckCircle2, Loader2, XCircle, RotateCcw } from "lucide-react";
 
 // ---- Status styling map ----
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode; hinglish: string }> = {
@@ -98,20 +98,36 @@ interface Appointment {
 function AppointmentCard({
   appt,
   hospital,
+  patientPhone,
 }: {
   appt: Appointment;
   hospital: { name: string; phone: string | null; whatsapp: string | null; google_maps_url: string | null };
+  patientPhone: string;
 }) {
+  const [requestState, setRequestState] = useState<"idle" | "reschedule" | "cancel" | "loading" | "done" | "error">("idle");
+  const [reason, setReason] = useState("");
+
   const cfg = STATUS_CONFIG[appt.status] ?? STATUS_CONFIG.pending;
   const displayDate = appt.confirmed_date ?? appt.preferred_date;
   const displayTime = appt.confirmed_time ? formatTime(appt.confirmed_time) : appt.preferred_slot;
   const waNumber = hospital.whatsapp?.replace(/\D/g, "");
-  const waUrl = waNumber
-    ? `https://wa.me/${waNumber}?text=Namaste%2C+mujhe+appointment+${appt.id.slice(0, 8)}+ke+baare+mein+poochna+tha.`
-    : null;
 
   const isActive = ["approved", "arrived", "in_consultation", "rescheduled"].includes(appt.status);
-  const canCancel = ["pending", "approved", "rescheduled"].includes(appt.status);
+  const canRequest = ["pending", "approved", "rescheduled"].includes(appt.status);
+
+  const submitRequest = async (action: "reschedule" | "cancel") => {
+    setRequestState("loading");
+    try {
+      const res = await fetch("/api/status/reschedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: patientPhone, appointment_id: appt.id, action, reason }),
+      });
+      setRequestState(res.ok ? "done" : "error");
+    } catch {
+      setRequestState("error");
+    }
+  };
 
   return (
     <div className={`rounded-3xl border bg-card overflow-hidden ${isActive ? "border-primary/30 shadow-md shadow-primary/5" : ""}`}>
@@ -182,9 +198,9 @@ function AppointmentCard({
               <Phone className="size-4 text-primary" /> Call Hospital
             </a>
           )}
-          {waUrl && (
+          {waNumber && (
             <a
-              href={waUrl}
+              href={`https://wa.me/${waNumber}?text=Namaste%2C+mujhe+appointment+${appt.id.slice(0, 8)}+ke+baare+mein+poochna+tha.`}
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-sm font-medium text-green-800 hover:bg-green-100 transition-colors"
@@ -202,17 +218,69 @@ function AppointmentCard({
               <Navigation className="size-4 text-primary" /> Get Directions
             </a>
           )}
-          {canCancel && waUrl && (
-            <a
-              href={`https://wa.me/${waNumber}?text=Namaste%2C+meri+appointment+${appt.id.slice(0, 8)}+cancel/reschedule+karni+hai.`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-center text-xs text-muted-foreground hover:text-foreground transition-colors mt-1"
-            >
-              Request reschedule or cancel →
-            </a>
-          )}
         </div>
+
+        {/* Reschedule / Cancel request section (P2-E) */}
+        {canRequest && (
+          <div className="border-t pt-4">
+            {requestState === "done" ? (
+              <div className="rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
+                ✓ Request bhej di gayi. Reception jald contact karegi. / Request sent — reception will contact you shortly.
+              </div>
+            ) : requestState === "error" ? (
+              <div className="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                Could not send request. Please call the hospital directly.
+              </div>
+            ) : requestState === "idle" ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setRequestState("reschedule")}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium hover:bg-muted transition-colors"
+                >
+                  <RotateCcw className="size-3" /> Request Reschedule
+                </button>
+                <button
+                  onClick={() => setRequestState("cancel")}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors"
+                >
+                  <XCircle className="size-3" /> Request Cancel
+                </button>
+              </div>
+            ) : requestState === "loading" ? (
+              <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" /> Sending request...
+              </div>
+            ) : (
+              /* reschedule or cancel form */
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {requestState === "reschedule" ? "Reschedule request / Reschedule chahiye" : "Cancel request / Cancel karna chahte hain"}
+                </p>
+                <textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Reason (optional) / Wajah batayein (optional)"
+                  rows={2}
+                  className="w-full rounded-xl border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => submitRequest(requestState as "reschedule" | "cancel")}
+                    className="flex-1 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+                  >
+                    Send Request →
+                  </button>
+                  <button
+                    onClick={() => { setRequestState("idle"); setReason(""); }}
+                    className="rounded-xl border px-4 py-2 text-xs font-medium hover:bg-muted transition-colors"
+                  >
+                    Back
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -369,6 +437,7 @@ export function StatusLookup({
                   key={appt.id}
                   appt={appt}
                   hospital={hospital}
+                  patientPhone={phone}
                 />
               ))}
             </>

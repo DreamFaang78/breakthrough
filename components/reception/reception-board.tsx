@@ -293,6 +293,11 @@ function AppointmentCard({
     <div className="rounded-2xl border bg-card overflow-hidden">
       <div className={cn("flex items-center gap-2 border-b px-4 py-2.5", meta.color)}>
         <span className="text-sm font-semibold">{meta.label}</span>
+        {appt.has_pending_request && (
+          <span className="rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-bold text-white">
+            Patient Requested Change
+          </span>
+        )}
         {appt.token_number && (
           <span className="ml-auto rounded-full bg-white/60 px-2.5 py-0.5 text-xs font-bold">
             Token #{appt.token_number}
@@ -440,10 +445,15 @@ export function ReceptionBoard({ appointments, doctors, today }: Props) {
       list = list.filter((a) => (a.confirmed_date ?? a.preferred_date) === today);
     }
     if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      list = list.filter(
-        (a) => a.patients?.name?.toLowerCase().includes(q) || a.patients?.phone?.includes(q)
-      );
+      const q = search.trim();
+      if (/^\d{4}$/.test(q)) {
+        list = list.filter((a) => a.patients?.phone?.endsWith(q));
+      } else {
+        const ql = q.toLowerCase();
+        list = list.filter(
+          (a) => a.patients?.name?.toLowerCase().includes(ql) || a.patients?.phone?.includes(q)
+        );
+      }
     }
     return list;
   }, [appointments, tab, search, today]);
@@ -529,7 +539,7 @@ export function ReceptionBoard({ appointments, doctors, today }: Props) {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name or phone"
+            placeholder="Name, phone, or last 4 digits"
             className="w-64 rounded-xl border bg-background py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
           />
         </div>

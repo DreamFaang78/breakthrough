@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { bookingSchema } from "@/lib/validation/booking";
 import { getCurrentHospital } from "@/lib/tenant";
+import { notify } from "@/lib/notify";
 
 /**
  * POST /api/booking
@@ -91,6 +92,19 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
+
+  // Fire-and-forget notification — never block the response
+  notify("new_request", {
+    hospitalId: hospital.id,
+    hospitalName: hospital.name,
+    notificationEmail: hospital.notification_email ?? undefined,
+    patientName: data.name,
+    patientPhone: data.phone,
+    departmentName: data.department_id,
+    preferredDate: data.preferred_date,
+    preferredSlot: data.preferred_slot,
+    appointmentId: (result as { appointment_id?: string })?.appointment_id,
+  }).catch(() => {}); // already logged inside notify()
 
   return NextResponse.json({ ...(result as object), message: "Appointment request submitted successfully" });
 }
