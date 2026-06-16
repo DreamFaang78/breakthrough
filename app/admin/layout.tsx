@@ -32,6 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         fullName={profile.full_name}
         role={profile.role}
         navLinks={NAV_LINKS}
+        hospitalId={profile.hospital_id}
       />
       <main className="p-4">{children}</main>
     </div>

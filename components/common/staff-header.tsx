@@ -1,16 +1,19 @@
 import Link from "next/link";
 import { SignOutButton } from "@/components/common/sign-out-button";
+import { NotificationBell } from "@/components/common/notification-bell";
 
 export function StaffHeader({
   hospitalName,
   fullName,
   role,
   navLinks,
+  hospitalId,
 }: {
   hospitalName: string;
   fullName: string;
   role: string;
   navLinks: { href: string; label: string }[];
+  hospitalId?: string | null;
 }) {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
@@ -27,6 +30,7 @@ export function StaffHeader({
           ))}
         </nav>
         <div className="flex items-center gap-3">
+          {hospitalId && <NotificationBell hospitalId={hospitalId} />}
           <span className="text-sm text-muted-foreground">{fullName}</span>
           <SignOutButton />
         </div>

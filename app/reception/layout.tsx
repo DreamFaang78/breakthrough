@@ -24,6 +24,7 @@ export default async function ReceptionLayout({ children }: { children: React.Re
         fullName={profile.full_name}
         role={profile.role}
         navLinks={NAV_LINKS}
+        hospitalId={profile.hospital_id}
       />
       <main className="p-4">{children}</main>
     </div>
