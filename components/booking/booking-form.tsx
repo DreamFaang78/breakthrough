@@ -9,7 +9,22 @@ import {
   type BookingFormInput,
   TIME_SLOTS,
 } from "@/lib/validation/booking";
-import { CheckCircle2, Loader2, ChevronDown } from "lucide-react";
+import {
+  CheckCircle2,
+  Loader2,
+  ChevronDown,
+  Stethoscope,
+  UserRound,
+  CalendarDays,
+  Clock3,
+  Phone,
+  MapPin,
+  FileText,
+  ClipboardList,
+  ArrowLeft,
+  BadgeCheck,
+} from "lucide-react";
+import { toast } from "sonner";
 
 type Department = { id: string; name: string };
 type Doctor = { id: string; name: string; department_id: string; qualification: string | null };
@@ -124,6 +139,67 @@ function BookingConfirmation({ result, phone }: { result: BookingResult; phone: 
   );
 }
 
+// ---- Submitting animation screen ----
+
+function SubmittingScreen() {
+  const [phase, setPhase] = useState(0);
+  const steps = ["Sending your details", "Reviewing appointment", "Almost done"] as const;
+
+  useEffect(() => {
+    const id = setInterval(() => setPhase((p) => Math.min(p + 1, steps.length - 1)), 2000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-8 py-14 animate-fade-in">
+      {/* Concentric pulse rings */}
+      <div className="relative flex size-24 items-center justify-center">
+        <span className="absolute inset-0 animate-ping rounded-full bg-primary/10" style={{ animationDuration: "2.4s" }} />
+        <span className="absolute inset-3 animate-ping rounded-full bg-primary/20" style={{ animationDuration: "2.4s", animationDelay: "0.5s" }} />
+        <div className="relative flex size-14 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/30">
+          <Loader2 className="size-7 animate-spin text-white" />
+        </div>
+      </div>
+
+      {/* Headline + cycling sub-message */}
+      <div className="text-center">
+        <h3 className="text-lg font-semibold">Booking your appointment</h3>
+        <p key={phase} className="mt-1.5 text-sm text-muted-foreground animate-fade-in">
+          {steps[phase]}…
+        </p>
+      </div>
+
+      {/* Auto-advancing step list */}
+      <div className="flex w-56 flex-col gap-3">
+        {steps.map((label, i) => (
+          <div
+            key={i}
+            className={cn(
+              "flex items-center gap-2.5 text-xs transition-all duration-500",
+              i <= phase ? "text-foreground" : "text-muted-foreground/40"
+            )}
+          >
+            <div
+              className={cn(
+                "flex size-5 shrink-0 items-center justify-center rounded-full transition-all duration-500",
+                i < phase
+                  ? "bg-primary"
+                  : i === phase
+                  ? "border-2 border-primary"
+                  : "border-2 border-border"
+              )}
+            >
+              {i < phase && <BadgeCheck className="size-3 text-white" />}
+              {i === phase && <div className="size-1.5 animate-pulse rounded-full bg-primary" />}
+            </div>
+            {label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ---- Step indicator ----
 function StepDot({ active, done, label }: { active: boolean; done: boolean; label: string }) {
   return (
@@ -213,13 +289,17 @@ export function BookingForm({
       const json = await res.json();
 
       if (!res.ok) {
-        setServerError(json.error ?? "Something went wrong. Please try again.");
+        const msg = json.error ?? "Something went wrong. Please try again.";
+        setServerError(msg);
+        toast.error(msg);
         return;
       }
 
       setResult({ appointment_id: json.appointment_id, patient_phone: data.phone });
     } catch {
-      setServerError("Network error. Please check your connection and try again.");
+      const msg = "Network error. Please check your connection and try again.";
+      setServerError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -229,6 +309,8 @@ export function BookingForm({
   const todayStr = new Date().toISOString().split("T")[0];
   // Max date: 3 months out
   const maxDateStr = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+  if (submitting) return <SubmittingScreen />;
 
   if (result) {
     return <BookingConfirmation result={result} phone={result.patient_phone} />;
@@ -252,7 +334,7 @@ export function BookingForm({
       <div className={cn("space-y-5", step !== 1 && "hidden")}>
           {/* Department */}
           <div>
-            <FieldLabel required>Department</FieldLabel>
+            <FieldLabel required><Stethoscope className="inline size-3.5 mr-1 text-muted-foreground" />Department</FieldLabel>
             <SelectBase {...register("department_id")} className="mt-1.5">
               <option value="">Select department</option>
               {departments.map((d) => (
@@ -264,7 +346,7 @@ export function BookingForm({
 
           {/* Doctor */}
           <div>
-            <FieldLabel>Doctor (optional)</FieldLabel>
+            <FieldLabel><UserRound className="inline size-3.5 mr-1 text-muted-foreground" />Doctor (optional)</FieldLabel>
             <SelectBase {...register("doctor_id")} className="mt-1.5" disabled={filteredDoctors.length === 0}>
               <option value="">Any available doctor</option>
               {filteredDoctors.map((d) => (
@@ -277,7 +359,7 @@ export function BookingForm({
 
           {/* Type */}
           <div>
-            <FieldLabel required>Appointment Type</FieldLabel>
+            <FieldLabel required><ClipboardList className="inline size-3.5 mr-1 text-muted-foreground" />Appointment Type</FieldLabel>
             <div className="mt-1.5 grid grid-cols-3 gap-2">
               {(["opd", "follow_up", "emergency"] as const).map((type) => (
                 <label
@@ -298,7 +380,7 @@ export function BookingForm({
 
           {/* Date */}
           <div>
-            <FieldLabel required>Preferred Date</FieldLabel>
+            <FieldLabel required><CalendarDays className="inline size-3.5 mr-1 text-muted-foreground" />Preferred Date</FieldLabel>
             <InputBase
               {...register("preferred_date")}
               type="date"
@@ -311,7 +393,7 @@ export function BookingForm({
 
           {/* Time slot */}
           <div>
-            <FieldLabel required>Preferred Time</FieldLabel>
+            <FieldLabel required><Clock3 className="inline size-3.5 mr-1 text-muted-foreground" />Preferred Time</FieldLabel>
             <div className="mt-1.5 space-y-2">
               {TIME_SLOTS.map((slot) => (
                 <label
@@ -360,21 +442,21 @@ export function BookingForm({
           <button
             type="button"
             onClick={() => setStep(1)}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            ← Back to appointment details
+            <ArrowLeft className="size-3.5" />Back to appointment details
           </button>
 
           {/* Name */}
           <div>
-            <FieldLabel required>Patient Name / Mareez ka Naam</FieldLabel>
+            <FieldLabel required><UserRound className="inline size-3.5 mr-1 text-muted-foreground" />Patient Name / Mareez ka Naam</FieldLabel>
             <InputBase {...register("name")} placeholder="Full name" className="mt-1.5" autoFocus />
             <FieldError message={errors.name?.message} />
           </div>
 
           {/* Phone */}
           <div>
-            <FieldLabel required>Phone Number / Phone Nambhar</FieldLabel>
+            <FieldLabel required><Phone className="inline size-3.5 mr-1 text-muted-foreground" />Phone Number / Phone Nambhar</FieldLabel>
             <InputBase
               {...register("phone")}
               type="tel"
@@ -417,13 +499,13 @@ export function BookingForm({
 
           {/* City */}
           <div>
-            <FieldLabel>City / Area (optional)</FieldLabel>
+            <FieldLabel><MapPin className="inline size-3.5 mr-1 text-muted-foreground" />City / Area (optional)</FieldLabel>
             <InputBase {...register("city_area")} placeholder="e.g. Civil Lines, Kanpur" className="mt-1.5" />
           </div>
 
           {/* Problem */}
           <div>
-            <FieldLabel>Problem / Symptoms (optional)</FieldLabel>
+            <FieldLabel><FileText className="inline size-3.5 mr-1 text-muted-foreground" />Problem / Symptoms (optional)</FieldLabel>
             <textarea
               {...register("problem")}
               rows={3}

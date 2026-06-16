@@ -36,7 +36,7 @@ export async function middleware(request: NextRequest) {
 
   // ---- Route protection for staff areas ----
   const protectedPrefix = Object.keys(PROTECTED_ROLES).find((prefix) =>
-    pathname.startsWith(prefix)
+    pathname === prefix || pathname.startsWith(prefix + "/")
   );
 
   if (protectedPrefix) {

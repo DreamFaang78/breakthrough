@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Phone, Search } from "lucide-react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { LeadRow } from "@/lib/types";
 
@@ -69,8 +70,13 @@ export function LeadsTable({ leads }: Props) {
 
   async function updateStatus(id: string, status: string) {
     setUpdatingId(id);
-    await supabase.from("leads").update({ status }).eq("id", id);
-    router.refresh();
+    const { error } = await supabase.from("leads").update({ status }).eq("id", id);
+    if (error) {
+      toast.error("Failed to update lead status");
+    } else {
+      toast.success("Lead status updated");
+      router.refresh();
+    }
     setUpdatingId(null);
   }
 

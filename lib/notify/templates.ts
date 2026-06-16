@@ -212,3 +212,38 @@ export function buildEmailTemplate(event: NotifyEvent, p: NotifyPayload): EmailT
       return { subject: `[${p.hospitalName}] Notification`, html: `<p>Event: ${event}</p>` };
   }
 }
+
+/**
+ * Short, bilingual (Hinglish + English) WhatsApp message for patient-facing events.
+ * Returns null for events that are not sent to the patient via WhatsApp.
+ */
+export function buildWhatsAppMessage(event: NotifyEvent, p: NotifyPayload): string | null {
+  switch (event) {
+    case "appointment_approved": {
+      const lines = [
+        `✅ *${p.hospitalName}*`,
+        `Namaste ${p.patientName ?? ""},`.trim(),
+        `Aapki appointment confirm ho gayi hai. / Your appointment is confirmed.`,
+      ];
+      if (p.doctorName) lines.push(`👨‍⚕️ ${p.doctorName}`);
+      const date = formatDate(p.confirmedDate ?? p.preferredDate);
+      if (date) lines.push(`📅 ${date}${p.confirmedTime ? ` · ${p.confirmedTime}` : ""}`);
+      lines.push(`Kripya 15 minute pehle aayein. / Please arrive 15 minutes early.`);
+      return lines.join("\n");
+    }
+
+    case "follow_up_due": {
+      const lines = [
+        `📅 *${p.hospitalName}*`,
+        `Namaste ${p.patientName ?? ""},`.trim(),
+        `Aapka follow-up due hai. / Your follow-up is due.`,
+      ];
+      if (p.doctorName) lines.push(`👨‍⚕️ ${p.doctorName}`);
+      if (p.rebookUrl) lines.push(`Book karein / Book here: ${p.rebookUrl}`);
+      return lines.join("\n");
+    }
+
+    default:
+      return null;
+  }
+}

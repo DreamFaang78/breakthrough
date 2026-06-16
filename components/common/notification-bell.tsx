@@ -52,11 +52,20 @@ export function NotificationBell({ hospitalId }: { hospitalId: string }) {
     if (data) setNotifications(data as Notification[]);
   };
 
-  // Poll every 30 seconds
   useEffect(() => {
     fetchNotifications();
-    const timer = setInterval(fetchNotifications, 30_000);
-    return () => clearInterval(timer);
+
+    // Realtime subscription — new notifications appear instantly
+    const channel = supabase
+      .channel(`notifications:${hospitalId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications", filter: `hospital_id=eq.${hospitalId}` },
+        () => { fetchNotifications(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hospitalId]);
 

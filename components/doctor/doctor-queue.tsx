@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { AppointmentStatus, DoctorAppointment } from "@/lib/types";
 
@@ -261,10 +262,12 @@ export function DoctorQueue({ appointments, today, tomorrow }: Props) {
       p_meta: meta ?? {},
     });
     if (error) {
+      toast.error(error.message);
       setError(error.message);
       setLoadingId(null);
       return;
     }
+    toast.success("Status updated");
     setModal(null);
     router.refresh();
     setLoadingId(null);
