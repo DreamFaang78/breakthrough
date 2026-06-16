@@ -14,13 +14,16 @@ import { buildEmailTemplate, type NotifyEvent, type NotifyPayload } from "./temp
  * never breaks the booking or status flow.
  */
 export async function notify(event: NotifyEvent, payload: NotifyPayload): Promise<void> {
-  await Promise.allSettled([
-    insertNotification(event, payload),
-    sendEmail(event, payload),
-  ]);
+  const channels = EMAIL_ONLY_EVENTS.includes(event)
+    ? [sendEmail(event, payload)]
+    : [insertNotification(event, payload), sendEmail(event, payload)];
+  await Promise.allSettled(channels);
 }
 
 // ---- In-app notification (notifications table) ----
+
+// owner_digest is email-only — no in-app bell row needed
+const EMAIL_ONLY_EVENTS: NotifyEvent[] = ["owner_digest"];
 
 const NOTIFICATION_TITLES: Record<NotifyEvent, string> = {
   new_request: "New appointment request",
@@ -28,6 +31,7 @@ const NOTIFICATION_TITLES: Record<NotifyEvent, string> = {
   reschedule_request: "Patient requested reschedule",
   cancellation_request: "Patient requested cancellation",
   follow_up_due: "Follow-up due",
+  owner_digest: "Daily digest",
 };
 
 async function insertNotification(event: NotifyEvent, payload: NotifyPayload) {

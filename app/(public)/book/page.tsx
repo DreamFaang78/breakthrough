@@ -19,12 +19,12 @@ type Doctor = {
 export default async function BookPage({
   searchParams,
 }: {
-  searchParams: Promise<{ doctor?: string }>;
+  searchParams: Promise<{ doctor?: string; phone?: string; department_id?: string; doctor_id?: string }>;
 }) {
   const hospital = await getCurrentHospital();
   if (!hospital) return null;
 
-  const { doctor: doctorSlug } = await searchParams;
+  const { doctor: doctorSlug, phone, department_id, doctor_id } = await searchParams;
 
   const supabase = await createClient();
   const [{ data: departments }, { data: doctors }] = await Promise.all([
@@ -43,7 +43,7 @@ export default async function BookPage({
   ]);
 
   const preselectedDoctor = (doctors as unknown as Doctor[] | null)?.find(
-    (d) => d.slug === doctorSlug
+    (d) => d.slug === doctorSlug || d.id === doctor_id
   );
 
   return (
@@ -67,9 +67,9 @@ export default async function BookPage({
           hospitalId={hospital.id}
           departments={departments ?? []}
           doctors={(doctors ?? []) as unknown as Doctor[]}
-          phone={undefined}
-          defaultDepartmentId={preselectedDoctor?.department_id}
-          defaultDoctorId={preselectedDoctor?.id}
+          phone={phone ?? undefined}
+          defaultDepartmentId={preselectedDoctor?.department_id ?? department_id ?? undefined}
+          defaultDoctorId={preselectedDoctor?.id ?? doctor_id ?? undefined}
         />
       </div>
 
