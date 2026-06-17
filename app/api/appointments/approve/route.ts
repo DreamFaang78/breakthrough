@@ -52,6 +52,15 @@ export async function POST(request: NextRequest) {
     doctorName = doc?.name ?? undefined;
   }
 
+  // Look up the patient's email so the confirmation reaches them (if they gave one)
+  const { data: apptRow } = await supabase
+    .from("appointments")
+    .select("patients(email)")
+    .eq("id", appointmentId)
+    .single();
+  const patientEmail =
+    (apptRow as { patients?: { email?: string | null } | null } | null)?.patients?.email ?? undefined;
+
   const hospital = profile.hospital_id ? await getHospitalById(profile.hospital_id) : null;
 
   // Fire-and-forget — never block the response
@@ -61,6 +70,7 @@ export async function POST(request: NextRequest) {
     notificationEmail: hospital?.notification_email ?? undefined,
     patientName,
     patientPhone,
+    patientEmail,
     departmentName,
     doctorName,
     confirmedDate,

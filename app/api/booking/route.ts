@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
       preferred_slot: data.preferred_slot,
       name: data.name,
       phone: data.phone,
+      email: data.email || null,
       age: data.age,
       gender: data.gender,
       city_area: data.city_area || null,
@@ -122,7 +123,9 @@ export async function POST(request: NextRequest) {
     .eq("id", data.department_id)
     .single();
 
-  // Fire-and-forget notification — never block the response
+  const appointmentId = (result as { appointment_id?: string })?.appointment_id;
+
+  // Fire-and-forget notification to hospital staff — never block the response
   notify("new_request", {
     hospitalId: hospital.id,
     hospitalName: hospital.name,
@@ -132,8 +135,29 @@ export async function POST(request: NextRequest) {
     departmentName: dept?.name ?? undefined,
     preferredDate: data.preferred_date,
     preferredSlot: data.preferred_slot,
-    appointmentId: (result as { appointment_id?: string })?.appointment_id,
+    appointmentId,
   }).catch(() => {}); // already logged inside notify()
+
+  // Automated confirmation email to the patient (only sends if they gave an email)
+  if (data.email) {
+    const host = request.headers.get("host");
+    const proto = request.headers.get("x-forwarded-proto") ?? "https";
+    const statusUrl = host
+      ? `${proto}://${host}/status?phone=${encodeURIComponent(data.phone)}`
+      : undefined;
+
+    notify("booking_received", {
+      hospitalId: hospital.id,
+      hospitalName: hospital.name,
+      patientName: data.name,
+      patientEmail: data.email,
+      departmentName: dept?.name ?? undefined,
+      preferredDate: data.preferred_date,
+      preferredSlot: data.preferred_slot,
+      appointmentId,
+      statusUrl,
+    }).catch(() => {});
+  }
 
   return NextResponse.json({ ...(result as object), message: "Appointment request submitted successfully" });
 }

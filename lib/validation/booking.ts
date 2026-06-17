@@ -20,6 +20,12 @@ export const bookingSchema = z.object({
   phone: z
     .string()
     .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number"),
+  email: z
+    .string()
+    .email("Enter a valid email")
+    .max(150, "Email too long")
+    .optional()
+    .or(z.literal("")),
   age: z.coerce
     .number({ error: "Enter a valid age" })
     .int()

@@ -6,6 +6,7 @@
 
 export type NotifyEvent =
   | "new_request"
+  | "booking_received"
   | "appointment_approved"
   | "reschedule_request"
   | "cancellation_request"
@@ -17,6 +18,8 @@ export interface NotifyPayload {
   hospitalId: string;
   patientName?: string;
   patientPhone?: string;
+  patientEmail?: string;
+  statusUrl?: string;
   doctorName?: string;
   departmentName?: string;
   preferredDate?: string;
@@ -72,6 +75,29 @@ export function buildEmailTemplate(event: NotifyEvent, p: NotifyPayload): EmailT
       ${ref ? `<tr><td style="padding:6px 0;color:#64748b">Ref</td><td style="padding:6px 0;font-family:monospace">#${ref}</td></tr>` : ""}
     </table>
     <a href="/reception" style="display:inline-block;margin-top:20px;background:#1d4ed8;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">Open Reception Dashboard →</a>
+  </div>
+</div>`,
+      };
+
+    case "booking_received":
+      return {
+        subject: `[${p.hospitalName}] Aapki request mil gayi! / We received your request`,
+        html: `
+<div style="font-family:sans-serif;max-width:560px;margin:auto;color:#111">
+  <div style="background:#1d4ed8;padding:20px 24px;border-radius:12px 12px 0 0">
+    <h2 style="color:#fff;margin:0;font-size:18px">📩 Request Received</h2>
+    <p style="color:#bfdbfe;margin:4px 0 0;font-size:13px">${p.hospitalName}</p>
+  </div>
+  <div style="border:1px solid #e2e8f0;border-top:none;padding:24px;border-radius:0 0 12px 12px">
+    <p style="font-size:15px;margin:0 0 16px">Namaste <strong>${p.patientName ?? ""}</strong>,<br>Aapki appointment request mil gayi hai. Hum jald confirm karenge. / We&apos;ve received your appointment request and will confirm shortly.</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      ${p.departmentName ? `<tr><td style="padding:6px 0;color:#64748b">Department</td><td style="padding:6px 0;font-weight:600">${p.departmentName}</td></tr>` : ""}
+      <tr><td style="padding:6px 0;color:#64748b">Preferred Date</td><td style="padding:6px 0;font-weight:600">${formatDate(p.preferredDate)}</td></tr>
+      ${p.preferredSlot ? `<tr><td style="padding:6px 0;color:#64748b">Preferred Slot</td><td style="padding:6px 0">${p.preferredSlot}</td></tr>` : ""}
+      ${ref ? `<tr><td style="padding:6px 0;color:#64748b">Reference</td><td style="padding:6px 0;font-family:monospace">#${ref}</td></tr>` : ""}
+    </table>
+    ${p.statusUrl ? `<a href="${p.statusUrl}" style="display:inline-block;margin-top:20px;background:#1d4ed8;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">Check Appointment Status →</a>` : ""}
+    <p style="margin-top:20px;font-size:12px;color:#94a3b8">Aapki status aapke phone number se check ho sakti hai. / You can check your status anytime using your phone number.</p>
   </div>
 </div>`,
       };

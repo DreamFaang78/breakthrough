@@ -24,11 +24,13 @@ export async function notify(event: NotifyEvent, payload: NotifyPayload): Promis
 
 // ---- In-app notification (notifications table) ----
 
-// owner_digest is email-only — no in-app bell row needed
-const EMAIL_ONLY_EVENTS: NotifyEvent[] = ["owner_digest"];
+// These events are email-only — no in-app bell row needed.
+// booking_received is a patient confirmation; staff already get new_request.
+const EMAIL_ONLY_EVENTS: NotifyEvent[] = ["owner_digest", "booking_received"];
 
 const NOTIFICATION_TITLES: Record<NotifyEvent, string> = {
   new_request: "New appointment request",
+  booking_received: "Booking received",
   appointment_approved: "Appointment confirmed",
   reschedule_request: "Patient requested reschedule",
   cancellation_request: "Patient requested cancellation",
@@ -58,13 +60,18 @@ async function insertNotification(event: NotifyEvent, payload: NotifyPayload) {
 
 // ---- Email via Resend REST API (no SDK dependency) ----
 
+// Patient-facing events email the patient; everything else emails hospital staff.
+const PATIENT_EMAIL_EVENTS: NotifyEvent[] = ["booking_received", "appointment_approved", "follow_up_due"];
+
 async function sendEmail(event: NotifyEvent, payload: NotifyPayload) {
   const apiKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.NOTIFY_FROM_EMAIL ?? "notifications@hospitalos.app";
 
-  // Determine recipient: hospital staff email for requests, patient email not available in MVP
-  const to = payload.notificationEmail;
-  if (!apiKey || !to) return; // silently skip — not configured
+  // Recipient depends on the audience: patient for confirmations, staff for requests/digests.
+  const to = PATIENT_EMAIL_EVENTS.includes(event)
+    ? payload.patientEmail
+    : payload.notificationEmail;
+  if (!apiKey || !to) return; // silently skip — not configured or no recipient
 
   try {
     const { subject, html } = buildEmailTemplate(event, payload);

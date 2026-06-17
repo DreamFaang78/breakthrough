@@ -489,6 +489,21 @@ export function BookingForm({
             <p className="mt-1 text-xs text-muted-foreground">Your status can be checked with this number</p>
           </div>
 
+          {/* Email */}
+          <div>
+            <FieldLabel><FileText className="inline size-3.5 mr-1 text-muted-foreground" />Email (optional)</FieldLabel>
+            <InputBase
+              {...register("email")}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              className="mt-1.5"
+            />
+            <FieldError message={errors.email?.message} />
+            <p className="mt-1 text-xs text-muted-foreground">Get booking updates on email / Email par updates payein</p>
+          </div>
+
           {/* Age + Gender */}
           <div className="grid grid-cols-2 gap-3">
             <div>
