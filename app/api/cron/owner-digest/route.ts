@@ -12,7 +12,7 @@ import { notify } from "@/lib/notify";
  */
 export async function POST(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("x-cron-secret") !== secret) {
+  if (!secret || request.headers.get("x-cron-secret") !== secret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

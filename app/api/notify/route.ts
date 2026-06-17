@@ -9,7 +9,7 @@ import type { NotifyEvent, NotifyPayload } from "@/lib/notify/templates";
  */
 export async function POST(request: NextRequest) {
   const secret = process.env.NOTIFY_SECRET;
-  if (secret && request.headers.get("x-notify-secret") !== secret) {
+  if (!secret || request.headers.get("x-notify-secret") !== secret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -9,10 +9,9 @@ import { createClient } from "@/lib/supabase/server";
  */
 export async function getCurrentHospital() {
   const headerList = await headers();
-  const slug =
-    headerList.get("x-hospital-slug") ??
-    process.env.NEXT_PUBLIC_DEFAULT_HOSPITAL_SLUG ??
-    "sharma-hospital";
+  const slug = headerList.get("x-hospital-slug");
+
+  if (!slug) return null;
 
   const supabase = await createClient();
   const { data } = await supabase

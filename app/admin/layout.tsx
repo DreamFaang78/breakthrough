@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: "/admin/services", label: "Services" },
   { href: "/admin/timings", label: "Timings" },
   { href: "/admin/staff", label: "Staff" },
+  { href: "/admin/testimonials", label: "Testimonials" },
   { href: "/admin/content", label: "Content" },
   { href: "/admin/profile", label: "Profile" },
 ];

@@ -11,9 +11,11 @@ export default async function LoginPage({
 }) {
   const { redirect: redirectTo, error } = await searchParams;
 
+  const safeRedirect = redirectTo?.match(/^\/(?!\/)/) ? redirectTo : undefined;
+
   const profile = await getCurrentProfile();
   if (profile) {
-    redirect(redirectTo || ROLE_HOME[profile.role] || "/");
+    redirect(safeRedirect || ROLE_HOME[profile.role] || "/");
   }
 
   return (
@@ -29,7 +31,7 @@ export default async function LoginPage({
               You don&apos;t have access to that page.
             </p>
           )}
-          <LoginForm redirectTo={redirectTo} />
+          <LoginForm redirectTo={safeRedirect} />
         </CardContent>
       </Card>
     </div>

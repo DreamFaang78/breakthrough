@@ -10,11 +10,8 @@ import { notify } from "@/lib/notify";
  * Rate-limited per IP; honeypot checked; Zod-validated before hitting the DB.
  */
 export async function POST(request: NextRequest) {
-  // ----- Rate limiting (simple in-memory, edge-compatible header check) -----
-  const forwarded = request.headers.get("x-forwarded-for");
-  const ip = forwarded ? forwarded.split(",")[0].trim() : "unknown";
-  // Basic header-based rate limit: 5 requests per minute per IP via Vercel edge
-  // Full rate limiting is handled at the edge level; this is a secondary guard.
+  // CF-Connecting-IP is set by Cloudflare and cannot be spoofed; fall back to x-real-ip on Vercel direct.
+  const ip = request.headers.get("CF-Connecting-IP") ?? request.headers.get("x-real-ip") ?? "unknown";
 
   let body: unknown;
   try {
@@ -27,6 +24,31 @@ export async function POST(request: NextRequest) {
   if (typeof body === "object" && body !== null && "_hp" in body && (body as Record<string, unknown>)._hp) {
     // Bot detected — silently succeed but don't write anything
     return NextResponse.json({ appointment_id: "honeypot", message: "ok" });
+  }
+
+  // ----- Cloudflare Turnstile verification -----
+  const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+  if (turnstileSecret) {
+    const token =
+      typeof body === "object" && body !== null && "cf_turnstile_response" in body
+        ? String((body as Record<string, unknown>).cf_turnstile_response ?? "")
+        : "";
+
+    const verifyRes = await fetch(
+      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ secret: turnstileSecret, response: token, remoteip: ip }),
+      }
+    );
+    const verifyData = (await verifyRes.json()) as { success: boolean };
+    if (!verifyData.success) {
+      return NextResponse.json(
+        { error: "Security check failed. Please refresh and try again." },
+        { status: 400 }
+      );
+    }
   }
 
   // ----- Resolve hospital -----
@@ -93,6 +115,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 
+  // Resolve department name for the notification (non-blocking)
+  const { data: dept } = await supabase
+    .from("departments")
+    .select("name")
+    .eq("id", data.department_id)
+    .single();
+
   // Fire-and-forget notification — never block the response
   notify("new_request", {
     hospitalId: hospital.id,
@@ -100,7 +129,7 @@ export async function POST(request: NextRequest) {
     notificationEmail: hospital.notification_email ?? undefined,
     patientName: data.name,
     patientPhone: data.phone,
-    departmentName: data.department_id,
+    departmentName: dept?.name ?? undefined,
     preferredDate: data.preferred_date,
     preferredSlot: data.preferred_slot,
     appointmentId: (result as { appointment_id?: string })?.appointment_id,

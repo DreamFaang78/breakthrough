@@ -1,7 +1,8 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
-import { buildEmailTemplate, type NotifyEvent, type NotifyPayload } from "./templates";
+import { buildEmailTemplate, buildWhatsAppMessage, type NotifyEvent, type NotifyPayload } from "./templates";
+import { dispatchWhatsApp, normalizePhone } from "./whatsapp";
 
 /**
  * Single notify() entry point — PILLAR P2-A.
@@ -9,6 +10,7 @@ import { buildEmailTemplate, type NotifyEvent, type NotifyPayload } from "./temp
  * Channels (in order, gracefully skipped if unconfigured):
  *   1. Insert into notifications table (always — drives the in-app bell)
  *   2. Send email via Resend REST API (if RESEND_API_KEY is set)
+ *   3. Send WhatsApp to the patient for patient-facing events (if a provider is set)
  *
  * Never throws — logs errors and continues so a notification failure
  * never breaks the booking or status flow.
@@ -16,7 +18,7 @@ import { buildEmailTemplate, type NotifyEvent, type NotifyPayload } from "./temp
 export async function notify(event: NotifyEvent, payload: NotifyPayload): Promise<void> {
   const channels = EMAIL_ONLY_EVENTS.includes(event)
     ? [sendEmail(event, payload)]
-    : [insertNotification(event, payload), sendEmail(event, payload)];
+    : [insertNotification(event, payload), sendEmail(event, payload), sendWhatsApp(event, payload)];
   await Promise.allSettled(channels);
 }
 
@@ -82,5 +84,27 @@ async function sendEmail(event: NotifyEvent, payload: NotifyPayload) {
     }
   } catch (err) {
     console.error("[notify] sendEmail failed:", err);
+  }
+}
+
+// ---- WhatsApp to the patient (provider wired in lib/notify/whatsapp.ts) ----
+
+// Patient-facing events that also go out on WhatsApp, sent to the patient's phone.
+const PATIENT_WHATSAPP_EVENTS: NotifyEvent[] = ["appointment_approved", "follow_up_due"];
+
+async function sendWhatsApp(event: NotifyEvent, payload: NotifyPayload) {
+  if (!PATIENT_WHATSAPP_EVENTS.includes(event)) return;
+  if (!payload.patientPhone) return;
+
+  const to = normalizePhone(payload.patientPhone);
+  if (!to) return;
+
+  const message = buildWhatsAppMessage(event, payload);
+  if (!message) return;
+
+  try {
+    await dispatchWhatsApp(to, message);
+  } catch (err) {
+    console.error("[notify] sendWhatsApp failed:", err);
   }
 }

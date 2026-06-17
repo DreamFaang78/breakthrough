@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentHospital } from "@/lib/tenant";
 import { BookingForm } from "@/components/booking/booking-form";
@@ -79,6 +80,15 @@ export default async function BookPage({
         <span>⚡ Confirmed within hours</span>
         <span>📞 No-confirm? We call you</span>
       </div>
+
+      {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          strategy="afterInteractive"
+          async
+          defer
+        />
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { walkInSchema, type WalkInFormInput, type WalkInFormValues } from "@/lib/validation/walk-in";
 
@@ -151,12 +152,15 @@ export function WalkInForm({ departments, doctors, hospitalId }: Props) {
     });
 
     if (error) {
+      toast.error(error.message);
       setServerError(error.message);
       setSubmitting(false);
       return;
     }
 
-    setResult(rpcResult as WalkInResult);
+    const walkInResult = rpcResult as WalkInResult;
+    toast.success(`Token #${walkInResult.token_number} issued`);
+    setResult(walkInResult);
     setSubmitting(false);
   };
 

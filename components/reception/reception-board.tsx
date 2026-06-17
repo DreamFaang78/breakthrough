@@ -576,14 +576,24 @@ export function ReceptionBoard({ appointments, doctors, today }: Props) {
           onSubmit={({ doctorId, date, time }) =>
             runAction(
               modal.appt.id,
-              () =>
-                supabase.rpc("assign_appointment", {
-                  p_appointment_id: modal.appt.id,
-                  p_doctor_id: doctorId || null,
-                  p_confirmed_date: date,
-                  p_confirmed_time: time,
-                }),
-              "Appointment assigned."
+              async () => {
+                const res = await fetch("/api/appointments/approve", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    appointmentId: modal.appt.id,
+                    doctorId: doctorId || null,
+                    confirmedDate: date,
+                    confirmedTime: time,
+                    patientName: modal.appt.patients?.name,
+                    patientPhone: modal.appt.patients?.phone,
+                    departmentName: modal.appt.departments?.name,
+                  }),
+                });
+                const json = await res.json() as { error?: string };
+                return { error: json.error ? { message: json.error } : null };
+              },
+              "Appointment approved."
             )
           }
         />
