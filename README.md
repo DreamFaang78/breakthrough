@@ -393,13 +393,17 @@ NEXT_PUBLIC_DEFAULT_HOSPITAL_SLUG=sharma-hospital
 
 ### 2. Database
 
-Run in Supabase SQL Editor (in order):
+Schema is managed as **numbered migrations applied via the Supabase CLI / CI — never hand-pasted into the SQL Editor** (manual edits cause drift). See [`MIGRATIONS.md`](./MIGRATIONS.md) for the full discipline: PR → staging → merge → prod.
 
-1. `supabase/migrations/0001_init.sql`
-2. `supabase/migrations/0002_rpcs.sql`
-3. `supabase/seed.sql`
+To bring a fresh database up to the current schema:
 
-This creates **Sharma Multispeciality Hospital** (Kanpur) with 4 departments, 3 doctors, services, and testimonials.
+```bash
+npx supabase login
+npx supabase db push --db-url "<your-db-session-pooler-url>"
+psql "<your-db-url>" -f supabase/seed.sql   # demo data (optional)
+```
+
+The seed creates **Sharma Multispeciality Hospital** (Kanpur) with 4 departments, 3 doctors, services, and testimonials.
 
 ### 3. Staff accounts
 
@@ -545,6 +549,7 @@ Security headers are configured in `next.config.ts`.
 | File | Purpose |
 |------|---------|
 | [`PRD.md`](./PRD.md) | Full product spec — modules, schema, RLS, phases, acceptance criteria |
+| [`MIGRATIONS.md`](./MIGRATIONS.md) | Database migration discipline — numbered migrations, staging-first, CI, drift baseline |
 | [`PILLAR.md`](./PILLAR.md) | First-principles goldmine features — pillar build order and agent implementation specs |
 | [`Claude.md`](./Claude.md) | Coding discipline for humans and AI agents |
 | [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql) | Database schema + RLS |

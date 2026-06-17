@@ -1,0 +1,67 @@
+name: Database migrations
+
+# Migration discipline:
+#   - PR that touches supabase/migrations/** -> apply to STAGING only.
+#     You then test against the staging app before merging.
+#   - Push/merge to main             -> re-apply to staging, then PROD.
+#   Prod never runs unless staging succeeded first (needs: staging).
+#
+# Secrets required (repo Settings -> Secrets and variables -> Actions):
+#   STAGING_DB_URL  - Session pooler connection string for the staging project
+#   PROD_DB_URL     - Session pooler connection string for the production project
+# Use the "Session pooler" URI (IPv4, port 5432), NOT direct (IPv6) or the
+# transaction pooler (6543) -- GitHub runners are IPv4-only and migrations need
+# a session connection. Percent-encode special characters in the password.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+
+concurrency:
+  group: db-migrate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  staging:
+    name: Apply to staging
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Preview pending migrations
+        run: supabase db push --db-url "$DB_URL" --dry-run
+        env:
+          DB_URL: ${{ secrets.STAGING_DB_URL }}
+      - name: Apply migrations
+        run: supabase db push --db-url "$DB_URL" --yes
+        env:
+          DB_URL: ${{ secrets.STAGING_DB_URL }}
+
+  production:
+    name: Apply to production
+    needs: staging
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Preview pending migrations
+        run: supabase db push --db-url "$DB_URL" --dry-run
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL }}
+      - name: Apply migrations
+        run: supabase db push --db-url "$DB_URL" --yes
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL }}
