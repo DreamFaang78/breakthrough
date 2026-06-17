@@ -86,7 +86,6 @@ export async function POST(request: NextRequest) {
       preferred_slot: data.preferred_slot,
       name: data.name,
       phone: data.phone,
-      email: data.email || null,
       age: data.age,
       gender: data.gender,
       city_area: data.city_area || null,
@@ -124,6 +123,17 @@ export async function POST(request: NextRequest) {
     .single();
 
   const appointmentId = (result as { appointment_id?: string })?.appointment_id;
+
+  // Persist the patient's email (additive, first-write-only) so future status
+  // emails can reach them. Best-effort — never block or fail the booking.
+  if (data.email) {
+    const { error: emailErr } = await supabase.rpc("set_patient_email", {
+      p_hospital_id: hospital.id,
+      p_phone: data.phone,
+      p_email: data.email,
+    });
+    if (emailErr) console.error("[booking] set_patient_email failed:", emailErr.message);
+  }
 
   // Fire-and-forget notification to hospital staff — never block the response
   notify("new_request", {
