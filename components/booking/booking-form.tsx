@@ -22,7 +22,12 @@ import {
   FileText,
   ClipboardList,
   ArrowLeft,
+  ArrowRight,
   BadgeCheck,
+  Copy,
+  Check,
+  Sparkles,
+  IdCard,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,6 +36,7 @@ type Doctor = { id: string; name: string; department_id: string; qualification: 
 
 interface Props {
   hospitalId: string;
+  hospitalName?: string;
   departments: Department[];
   doctors: Doctor[];
   phone?: string | null;
@@ -41,6 +47,11 @@ interface Props {
 interface BookingResult {
   appointment_id: string;
   patient_phone: string;
+  patient_name: string;
+  department_name?: string;
+  doctor_name?: string;
+  preferred_date: string;
+  preferred_slot: string;
 }
 
 function cn(...classes: (string | undefined | false)[]) {
@@ -96,44 +107,195 @@ function SelectBase({ className, children, ...props }: React.SelectHTMLAttribute
   );
 }
 
-// ---- Confirmation screen ----
+// ---- Confirmation screen — premium "Appointment Pass" ----
 
-function BookingConfirmation({ result, phone }: { result: BookingResult; phone: string }) {
-  const statusUrl = `/status?phone=${encodeURIComponent(phone)}`;
+function formatPrettyDate(d?: string) {
+  if (!d) return "—";
+  const date = new Date(d);
+  if (isNaN(date.getTime())) return d;
+  return date.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "long" });
+}
+
+function BookingConfirmation({
+  result,
+  hospitalName,
+}: {
+  result: BookingResult;
+  hospitalName?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const statusUrl = `/status?phone=${encodeURIComponent(result.patient_phone)}`;
+  const ref = result.appointment_id.slice(0, 8).toUpperCase();
+  const firstName = result.patient_name?.trim().split(/\s+/)[0] ?? "";
+
+  const copyRef = async () => {
+    try {
+      await navigator.clipboard.writeText(ref);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable — ignore */
+    }
+  };
+
+  const details = [
+    { icon: Stethoscope, label: "Department", value: result.department_name ?? "—" },
+    { icon: UserRound, label: "Doctor", value: result.doctor_name ?? "To be assigned" },
+    { icon: CalendarDays, label: "Preferred date", value: formatPrettyDate(result.preferred_date) },
+    { icon: Clock3, label: "Preferred time", value: result.preferred_slot || "—" },
+  ];
+
+  const steps = [
+    { title: "Request received", sub: "Abhi • just now", state: "done" as const },
+    { title: "We confirm your slot", sub: "Kuch ghanton mein • we'll call / WhatsApp you", state: "active" as const },
+    { title: "Visit & meet the doctor", sub: "Apni report saath laayein • bring your reports", state: "todo" as const },
+  ];
+
+  const checklist = [
+    { icon: IdCard, en: "A valid photo ID", hi: "Pehchaan patra (ID)" },
+    { icon: FileText, en: "Past prescriptions & reports", hi: "Purani parchi & reports" },
+    { icon: Clock3, en: "Arrive 15 minutes early", hi: "15 min pehle aayein" },
+    { icon: BadgeCheck, en: "This reference number", hi: "Yeh reference number" },
+  ];
 
   return (
-    <div className="animate-scale-in rounded-3xl border border-green-200 bg-green-50 p-8 text-center">
-      <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100">
-        <CheckCircle2 className="size-8 text-green-600" />
+    <div className="stagger space-y-5">
+      {/* Success hero */}
+      <div className="animate-fade-in-up text-center">
+        <div className="relative mx-auto mb-3 flex size-20 items-center justify-center">
+          <span className="absolute inset-0 animate-ping rounded-full bg-green-500/10" style={{ animationDuration: "2.4s" }} />
+          <span className="absolute inset-2 rounded-full bg-green-500/10" />
+          <div className="relative flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30">
+            <CheckCircle2 className="size-9 text-white" strokeWidth={2.5} />
+          </div>
+        </div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-green-600">Request received</p>
+        <h2 className="mt-1 flex items-center justify-center gap-2 text-2xl font-bold">
+          Ho gaya{firstName ? `, ${firstName}` : ""}! <Sparkles className="size-5 text-amber-400" />
+        </h2>
+        <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted-foreground">
+          Aapki appointment request mil gayi hai. We&apos;ll confirm your slot shortly.
+        </p>
       </div>
-      <h2 className="text-xl font-bold text-green-900">Aapki request mil gayi hai!</h2>
-      <p className="mt-1 text-sm text-green-700">We&apos;ve received your request. We&apos;ll confirm shortly.</p>
 
-      <div className="mt-6 rounded-2xl border border-green-200 bg-white px-5 py-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Reference</p>
-        <p className="mt-1 font-mono text-sm font-medium">{result.appointment_id.slice(0, 8).toUpperCase()}</p>
+      {/* The Appointment Pass */}
+      <div className="animate-fade-in-up relative overflow-hidden rounded-3xl bg-card shadow-xl ring-1 ring-black/5">
+        {/* Header strip */}
+        <div className="flex items-center justify-between bg-gradient-to-r from-primary to-primary/80 px-6 py-4 text-primary-foreground">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/70">Appointment Pass</p>
+            <p className="truncate text-sm font-bold">{hospitalName ?? "Your appointment"}</p>
+          </div>
+          <span className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold backdrop-blur">
+            ● Pending
+          </span>
+        </div>
+
+        {/* Reference — tap to copy */}
+        <div className="px-6 pb-4 pt-5 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Reference</p>
+          <button
+            type="button"
+            onClick={copyRef}
+            className="group mx-auto mt-1 flex items-center gap-2 rounded-xl px-3 py-1.5 transition-colors hover:bg-muted"
+          >
+            <span className="font-mono text-2xl font-bold tracking-[0.15em]">{ref}</span>
+            {copied ? (
+              <Check className="size-4 text-green-600" />
+            ) : (
+              <Copy className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />
+            )}
+          </button>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            {copied ? "Copied!" : "Tap to copy • screenshot this page to save"}
+          </p>
+        </div>
+
+        {/* Perforation / tear line */}
+        <div className="mx-6 border-t border-dashed border-border" />
+
+        {/* Details stub */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-4 bg-muted/30 px-6 py-5">
+          {details.map((d) => (
+            <div key={d.label} className="flex items-start gap-2.5">
+              <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <d.icon className="size-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{d.label}</p>
+                <p className="truncate text-sm font-semibold">{d.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-6 flex flex-col gap-2">
+      {/* What happens next */}
+      <div className="animate-fade-in-up rounded-2xl border bg-card p-5">
+        <h3 className="mb-3 text-sm font-bold">Aage kya hoga / What happens next</h3>
+        <ol>
+          {steps.map((s, i) => (
+            <li key={s.title} className="flex gap-3">
+              <div className="flex flex-col items-center">
+                <div
+                  className={cn(
+                    "flex size-6 shrink-0 items-center justify-center rounded-full text-white",
+                    s.state === "done" && "bg-green-500",
+                    s.state === "active" && "animate-pulse-border bg-primary",
+                    s.state === "todo" && "border-2 border-border bg-background"
+                  )}
+                >
+                  {s.state === "done" && <Check className="size-3.5" />}
+                  {s.state === "active" && <div className="size-2 rounded-full bg-white" />}
+                </div>
+                {i < steps.length - 1 && <div className="my-1 w-px flex-1 bg-border" />}
+              </div>
+              <div className={cn(i === steps.length - 1 ? "pb-0" : "pb-4")}>
+                <p className={cn("text-sm font-semibold", s.state === "todo" && "text-muted-foreground")}>{s.title}</p>
+                <p className="text-xs text-muted-foreground">{s.sub}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      {/* What to bring */}
+      <div className="animate-fade-in-up rounded-2xl border bg-card p-5">
+        <h3 className="mb-3 text-sm font-bold">Kya laana hai / What to bring</h3>
+        <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          {checklist.map((c) => (
+            <li key={c.en} className="flex items-center gap-2.5 rounded-xl border bg-background p-2.5">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-green-500/10 text-green-600">
+                <c.icon className="size-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{c.en}</p>
+                <p className="truncate text-[11px] text-muted-foreground">{c.hi}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* CTAs */}
+      <div className="animate-fade-in-up flex flex-col gap-2">
         <a
           href={statusUrl}
-          className="w-full rounded-2xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-opacity hover:opacity-90"
         >
-          Check Appointment Status
+          Check Appointment Status <ArrowRight className="size-4" />
         </a>
         <button
           onClick={() => window.location.reload()}
-          className="w-full rounded-2xl border px-6 py-3.5 text-sm font-semibold hover:bg-muted transition-colors"
+          className="w-full rounded-2xl border px-6 py-3.5 text-sm font-semibold transition-colors hover:bg-muted"
         >
           Book Another Appointment
         </button>
       </div>
 
-      <p className="mt-5 text-xs text-muted-foreground">
-        Status updates at{" "}
-        <a href={statusUrl} className="text-primary hover:underline font-medium">
-          {typeof window !== "undefined" ? window.location.origin : ""}/status
-        </a>
+      {/* Reassurance */}
+      <p className="text-center text-xs text-muted-foreground">
+        Confirmation nahi mila? <span className="font-medium text-foreground">Hum aapko call karenge.</span> No confirmation? We&apos;ll call you.
       </p>
     </div>
   );
@@ -221,6 +383,7 @@ function StepDot({ active, done, label }: { active: boolean; done: boolean; labe
 
 export function BookingForm({
   hospitalId,
+  hospitalName,
   departments,
   doctors,
   phone,
@@ -314,7 +477,17 @@ export function BookingForm({
         return;
       }
 
-      setResult({ appointment_id: json.appointment_id, patient_phone: data.phone });
+      const dept = departments.find((d) => d.id === data.department_id);
+      const doc = data.doctor_id ? doctors.find((d) => d.id === data.doctor_id) : undefined;
+      setResult({
+        appointment_id: json.appointment_id,
+        patient_phone: data.phone,
+        patient_name: data.name,
+        department_name: dept?.name,
+        doctor_name: doc?.name,
+        preferred_date: data.preferred_date,
+        preferred_slot: data.preferred_slot,
+      });
     } catch {
       const msg = "Network error. Please check your connection and try again.";
       setServerError(msg);
@@ -332,7 +505,7 @@ export function BookingForm({
   if (submitting) return <SubmittingScreen />;
 
   if (result) {
-    return <BookingConfirmation result={result} phone={result.patient_phone} />;
+    return <BookingConfirmation result={result} hospitalName={hospitalName} />;
   }
 
   return (

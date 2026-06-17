@@ -66,6 +66,7 @@ export default async function BookPage({
       <div className="rounded-3xl border bg-card p-6 shadow-sm md:p-8">
         <BookingForm
           hospitalId={hospital.id}
+          hospitalName={hospital.name}
           departments={departments ?? []}
           doctors={(doctors ?? []) as unknown as Doctor[]}
           phone={phone ?? undefined}
