@@ -12,9 +12,12 @@ import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { ROLE_HOME } from "@/lib/auth/roles";
 
+// Login only checks the password is present — length/strength rules belong at
+// account creation, not here (enforcing a minimum at login locks out existing
+// users and gives no security benefit; Supabase Auth verifies the credentials).
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
-  password: z.string().min(10, "Password must be at least 10 characters"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export function LoginForm({ redirectTo }: { redirectTo?: string }) {
