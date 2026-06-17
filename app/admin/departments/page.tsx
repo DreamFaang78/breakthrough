@@ -1,4 +1,6 @@
+import { LayoutGrid } from "lucide-react";
 import { AdminDepartmentsTable } from "@/components/admin/admin-departments-table";
+import { PageHeader } from "@/components/common/page-header";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 import type { AdminDepartmentRow } from "@/lib/types";
@@ -15,7 +17,7 @@ export default async function AdminDepartmentsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Departments</h1>
+      <PageHeader title="Departments" description="Organise the specialties your hospital offers." icon={LayoutGrid} />
       <AdminDepartmentsTable
         departments={(departments ?? []) as AdminDepartmentRow[]}
         hospitalId={profile?.hospital_id ?? ""}

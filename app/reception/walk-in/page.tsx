@@ -1,4 +1,6 @@
+import { UserPlus } from "lucide-react";
 import { WalkInForm } from "@/components/reception/walk-in-form";
+import { PageHeader } from "@/components/common/page-header";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 
@@ -21,7 +23,7 @@ export default async function ReceptionWalkInPage() {
 
   return (
     <div className="max-w-lg space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Add Walk-in Patient</h1>
+      <PageHeader title="Add Walk-in Patient" description="Register a patient who arrived without booking." icon={UserPlus} />
       <WalkInForm
         departments={departments ?? []}
         doctors={doctors ?? []}

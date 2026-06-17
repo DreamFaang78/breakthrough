@@ -1,4 +1,6 @@
+import { Stethoscope } from "lucide-react";
 import { AdminDoctorsTable } from "@/components/admin/admin-doctors-table";
+import { PageHeader } from "@/components/common/page-header";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 import type { AdminDoctorRow, DepartmentOption } from "@/lib/types";
@@ -22,7 +24,7 @@ export default async function AdminDoctorsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Doctors</h1>
+      <PageHeader title="Doctors" description="Manage your medical team, profiles, and fees." icon={Stethoscope} />
       <AdminDoctorsTable
         doctors={(doctors ?? []) as unknown as AdminDoctorRow[]}
         departments={(departments ?? []) as DepartmentOption[]}

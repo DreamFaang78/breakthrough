@@ -1,4 +1,6 @@
+import { ClipboardList } from "lucide-react";
 import { AdminServicesTable } from "@/components/admin/admin-services-table";
+import { PageHeader } from "@/components/common/page-header";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 import type { AdminServiceRow, DepartmentOption } from "@/lib/types";
@@ -22,7 +24,7 @@ export default async function AdminServicesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Services</h1>
+      <PageHeader title="Services" description="List procedures and treatments with pricing." icon={ClipboardList} />
       <AdminServicesTable
         services={(services ?? []) as unknown as AdminServiceRow[]}
         departments={(departments ?? []) as DepartmentOption[]}

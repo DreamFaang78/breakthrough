@@ -1,4 +1,6 @@
+import { Building2 } from "lucide-react";
 import { AdminProfileForm } from "@/components/admin/admin-profile-form";
+import { PageHeader } from "@/components/common/page-header";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 import type { AdminHospitalRow } from "@/lib/types";
@@ -25,7 +27,7 @@ export default async function AdminProfilePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Hospital Profile</h1>
+      <PageHeader title="Hospital Profile" description="Contact details, address, and patient instructions." icon={Building2} />
       <AdminProfileForm
         hospital={hospital as AdminHospitalRow}
         arrivalInstruction={{ hi: arrivalInstruction.hi ?? "", en: arrivalInstruction.en ?? "" }}

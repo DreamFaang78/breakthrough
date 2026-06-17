@@ -1,4 +1,6 @@
+import { MessageSquareQuote } from "lucide-react";
 import { AdminTestimonialsTable } from "@/components/admin/admin-testimonials-table";
+import { PageHeader } from "@/components/common/page-header";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,12 +16,11 @@ export default async function AdminTestimonialsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Testimonials</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage patient reviews shown on your public website homepage.
-        </p>
-      </div>
+      <PageHeader
+        title="Testimonials"
+        description="Manage patient reviews shown on your public website homepage."
+        icon={MessageSquareQuote}
+      />
       <AdminTestimonialsTable
         testimonials={testimonials ?? []}
         hospitalId={profile?.hospital_id ?? ""}

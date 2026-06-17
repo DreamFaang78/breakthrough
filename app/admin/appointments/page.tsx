@@ -1,3 +1,5 @@
+import { CalendarCheck, Hourglass, CalendarDays, CalendarRange } from "lucide-react";
+import { PageHeader } from "@/components/common/page-header";
 import { StatCard } from "@/components/common/stat-card";
 import { ReceptionBoard } from "@/components/reception/reception-board";
 import { getCurrentProfile } from "@/lib/auth/profile";
@@ -43,17 +45,17 @@ export default async function AdminAppointmentsPage() {
     ]);
 
   const stats = [
-    { label: "Pending Requests", value: pending ?? 0 },
-    { label: "Today's Appointments", value: todaysAppointments ?? 0 },
-    { label: "Total Appointments", value: total ?? 0 },
+    { label: "Pending Requests", value: pending ?? 0, icon: Hourglass, tone: "warning" as const },
+    { label: "Today's Appointments", value: todaysAppointments ?? 0, icon: CalendarDays, tone: "primary" as const },
+    { label: "Total Appointments", value: total ?? 0, icon: CalendarRange, tone: "success" as const },
   ];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Appointments</h1>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <PageHeader title="Appointments" description="Review, approve, and manage every booking." icon={CalendarCheck} />
+      <div className="stagger grid gap-4 sm:grid-cols-3">
         {stats.map((stat) => (
-          <StatCard key={stat.label} label={stat.label} value={stat.value} />
+          <StatCard key={stat.label} label={stat.label} value={stat.value} icon={stat.icon} tone={stat.tone} />
         ))}
       </div>
       <ReceptionBoard

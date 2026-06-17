@@ -1,4 +1,6 @@
+import { Clock } from "lucide-react";
 import { AdminTimingsTable } from "@/components/admin/admin-timings-table";
+import { PageHeader } from "@/components/common/page-header";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 import type { AdminDoctorTimingsRow } from "@/lib/types";
@@ -15,10 +17,11 @@ export default async function AdminTimingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">OPD Timings</h1>
-      <p className="text-sm text-muted-foreground">
-        Set which days each doctor is available and their consultation hours.
-      </p>
+      <PageHeader
+        title="OPD Timings"
+        description="Set which days each doctor is available and their consultation hours."
+        icon={Clock}
+      />
       <AdminTimingsTable doctors={(doctors ?? []) as unknown as AdminDoctorTimingsRow[]} />
     </div>
   );

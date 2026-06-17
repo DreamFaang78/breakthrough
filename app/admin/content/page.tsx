@@ -1,4 +1,6 @@
+import { LayoutTemplate } from "lucide-react";
 import { AdminContentForm } from "@/components/admin/admin-content-form";
+import { PageHeader } from "@/components/common/page-header";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,10 +19,11 @@ export default async function AdminContentPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Website Content</h1>
-      <p className="text-sm text-muted-foreground">
-        Edit the headline and subtext shown on your homepage.
-      </p>
+      <PageHeader
+        title="Website Content"
+        description="Edit the headline and subtext shown on your homepage."
+        icon={LayoutTemplate}
+      />
       <AdminContentForm
         hospitalId={profile?.hospital_id ?? ""}
         initial={{ title: hero.title ?? "", subtitle: hero.subtitle ?? "" }}

@@ -1,4 +1,6 @@
+import { Users } from "lucide-react";
 import { AdminLeadsTable } from "@/components/admin/admin-leads-table";
+import { PageHeader } from "@/components/common/page-header";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 import type { DepartmentOption, DoctorOption, LeadRow } from "@/lib/types";
@@ -32,7 +34,7 @@ export default async function ReceptionLeadsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
+      <PageHeader title="Leads" description="Track enquiries and convert them into appointments." icon={Users} />
       <AdminLeadsTable
         leads={(leads ?? []) as unknown as LeadRow[]}
         departments={(departments ?? []) as DepartmentOption[]}

@@ -1,6 +1,8 @@
+import { PhoneCall } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 import { FollowUpList } from "@/components/reception/follow-up-list";
+import { PageHeader } from "@/components/common/page-header";
 import type { LeadRow } from "@/lib/types";
 
 export default async function FollowUpsPage() {
@@ -20,12 +22,11 @@ export default async function FollowUpsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Follow-up Call List</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Leads due for follow-up today or earlier — aaj call karni hai
-        </p>
-      </div>
+      <PageHeader
+        title="Follow-up Call List"
+        description="Leads due for follow-up today or earlier — aaj call karni hai"
+        icon={PhoneCall}
+      />
       <FollowUpList leads={(leads ?? []) as unknown as LeadRow[]} today={today} />
     </div>
   );

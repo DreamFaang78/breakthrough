@@ -1,4 +1,6 @@
+import { UserCog } from "lucide-react";
 import { AdminStaffTable } from "@/components/admin/admin-staff-table";
+import { PageHeader } from "@/components/common/page-header";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 import type { AdminStaffRow, DepartmentOption } from "@/lib/types";
@@ -24,7 +26,7 @@ export default async function AdminStaffPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Staff Accounts</h1>
+      <PageHeader title="Staff Accounts" description="Manage receptionist and doctor login access." icon={UserCog} />
       <AdminStaffTable
         staff={(staff ?? []) as unknown as AdminStaffRow[]}
         doctors={(doctors ?? []) as DepartmentOption[]}
