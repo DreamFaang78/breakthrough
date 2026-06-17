@@ -1,3 +1,5 @@
+import { CalendarDays, Hourglass, Users } from "lucide-react";
+import { DashboardHero } from "@/components/common/dashboard-hero";
 import { StatCard } from "@/components/common/stat-card";
 import { ReceptionBoard } from "@/components/reception/reception-board";
 import { getCurrentProfile } from "@/lib/auth/profile";
@@ -56,18 +58,27 @@ export default async function ReceptionDashboardPage() {
     has_pending_request: pendingRequestIds.has(a.id),
   }));
 
+  const pendingCount = pending ?? 0;
+  const todayCount = todaysAppointments ?? 0;
+  const leadsCount = newLeads ?? 0;
+
   const stats = [
-    { label: "Pending Requests", value: pending ?? 0 },
-    { label: "Today's Appointments", value: todaysAppointments ?? 0 },
-    { label: "New Leads", value: newLeads ?? 0 },
+    { label: "Pending Requests", value: pendingCount, icon: Hourglass, tone: "warning" as const },
+    { label: "Today's Appointments", value: todayCount, icon: CalendarDays, tone: "primary" as const },
+    { label: "New Leads", value: leadsCount, icon: Users, tone: "success" as const },
   ];
+
+  const summary =
+    pendingCount === 0
+      ? `${todayCount} appointment${todayCount === 1 ? "" : "s"} scheduled today.`
+      : `${pendingCount} request${pendingCount === 1 ? "" : "s"} need attention · ${todayCount} today`;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Welcome, {profile?.full_name}</h1>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <DashboardHero name={profile?.full_name ?? ""} summary={summary} />
+      <div className="stagger grid gap-4 sm:grid-cols-3">
         {stats.map((stat) => (
-          <StatCard key={stat.label} label={stat.label} value={stat.value} />
+          <StatCard key={stat.label} label={stat.label} value={stat.value} icon={stat.icon} tone={stat.tone} />
         ))}
       </div>
       <ReceptionBoard

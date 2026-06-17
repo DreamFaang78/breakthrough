@@ -1,3 +1,5 @@
+import { CalendarDays, Hourglass, CheckCircle2 } from "lucide-react";
+import { DashboardHero } from "@/components/common/dashboard-hero";
 import { StatCard } from "@/components/common/stat-card";
 import { DoctorQueue } from "@/components/doctor/doctor-queue";
 import { getCurrentProfile } from "@/lib/auth/profile";
@@ -41,18 +43,27 @@ export default async function DoctorDashboardPage() {
         .limit(200),
     ]);
 
+  const today_ = todaysCount ?? 0;
+  const waiting = pendingCount ?? 0;
+  const done = completedCount ?? 0;
+
   const stats = [
-    { label: "Today's Appointments", value: todaysCount ?? 0 },
-    { label: "Waiting", value: pendingCount ?? 0 },
-    { label: "Completed", value: completedCount ?? 0 },
+    { label: "Today's Appointments", value: today_, icon: CalendarDays, tone: "primary" as const },
+    { label: "Waiting", value: waiting, icon: Hourglass, tone: "warning" as const },
+    { label: "Completed", value: done, icon: CheckCircle2, tone: "success" as const },
   ];
+
+  const summary =
+    today_ === 0
+      ? "No appointments scheduled for today."
+      : `${today_} appointment${today_ === 1 ? "" : "s"} today · ${waiting} waiting · ${done} completed`;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Welcome, Dr. {profile?.full_name}</h1>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <DashboardHero prefix="Dr." name={profile?.full_name ?? ""} summary={summary} />
+      <div className="stagger grid gap-4 sm:grid-cols-3">
         {stats.map((stat) => (
-          <StatCard key={stat.label} label={stat.label} value={stat.value} />
+          <StatCard key={stat.label} label={stat.label} value={stat.value} icon={stat.icon} tone={stat.tone} />
         ))}
       </div>
       <DoctorQueue appointments={(appointments ?? []) as unknown as DoctorAppointment[]} today={today} tomorrow={tomorrow} />

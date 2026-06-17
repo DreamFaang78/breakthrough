@@ -1,3 +1,5 @@
+import { Stethoscope, LayoutGrid, CalendarCheck, Users } from "lucide-react";
+import { DashboardHero } from "@/components/common/dashboard-hero";
 import { StatCard } from "@/components/common/stat-card";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
@@ -27,18 +29,18 @@ export default async function AdminDashboardPage() {
     ]);
 
   const stats = [
-    { label: "Doctors", value: doctors ?? 0 },
-    { label: "Departments", value: departments ?? 0 },
-    { label: "Appointments", value: appointments ?? 0 },
-    { label: "Leads", value: leads ?? 0 },
+    { label: "Doctors", value: doctors ?? 0, icon: Stethoscope, tone: "primary" as const },
+    { label: "Departments", value: departments ?? 0, icon: LayoutGrid, tone: "default" as const },
+    { label: "Appointments", value: appointments ?? 0, icon: CalendarCheck, tone: "success" as const },
+    { label: "Leads", value: leads ?? 0, icon: Users, tone: "warning" as const },
   ];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Welcome, {profile?.full_name}</h1>
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+      <DashboardHero name={profile?.full_name ?? ""} />
+      <div className="stagger grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         {stats.map((stat) => (
-          <StatCard key={stat.label} label={stat.label} value={stat.value} />
+          <StatCard key={stat.label} label={stat.label} value={stat.value} icon={stat.icon} tone={stat.tone} />
         ))}
       </div>
     </div>
