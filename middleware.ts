@@ -21,7 +21,8 @@ export async function middleware(request: NextRequest) {
     hostWithoutPort === "localhost" ||
     hostWithoutPort === "127.0.0.1" ||
     hostParts.length <= 2 ||
-    hostWithoutPort.endsWith(".vercel.app");
+    hostWithoutPort.endsWith(".vercel.app") ||
+    hostParts[0] === "www";
 
   const hospitalSlug = isLocalOrApex
     ? request.nextUrl.searchParams.get("hospital") ??
